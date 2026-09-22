@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "creation": "2026-09-22 16:23:54.392608",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "spendgate_settings_section",
+  "finance_email",
+  "low_budget_alert_threshold_percent",
+  "fiscal_year_start_month"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "spendgate_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Spendgate Settings"
+  },
+  {
+   "fieldname": "finance_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Finance Email",
+   "reqd": 1
+  },
+  {
+   "default": "90",
+   "fieldname": "low_budget_alert_threshold_percent",
+   "fieldtype": "Percent",
+   "label": "Low Budget Alert Threshold Percent"
+  },
+  {
+   "default": "1",
+   "fieldname": "fiscal_year_start_month",
+   "fieldtype": "Int",
+   "label": "Fiscal Year Start Month"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-22 16:28:53.572884",
+ "modified_by": "Administrator",
+ "module": "Spendgate",
+ "name": "Spendgate Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
