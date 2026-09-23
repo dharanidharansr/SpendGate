@@ -7,11 +7,24 @@ app_license = "mit"
 
 # Apps
 # ------------------
+after_install = ["spendgate.install.after_install"]
 
+doc_events = {
+    "*": {
+        "on_update": "spendgate.audit.log_change",
+        "on_submit": "spendgate.audit.log_change",
+        "on_cancel": "spendgate.audit.log_change",
+    }
+}
 
 fixtures = [
-    "Department"
+    "Department",
+    {"doctype": "Role", "filters": {"role_name": ["like", "SG %"]}},
 ]
+
+permission_query_conditions = {
+    "Expense Claim": "spendgate.spendgate.doctype.expense_claim.expense_claim.get_permission_query_conditions",
+}
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
