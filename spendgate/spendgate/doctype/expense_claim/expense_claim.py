@@ -37,7 +37,7 @@ class ExpenseClaim(Document):
         self.remaining_budget_at_submission = remaining
         if "approved_by" in updates:
             self.approved_by = frappe.session.user
-        frappe.enqueue("spendgate.spendgate.doctype.expense_claim.expense_claim.notify_finance_of_new_claim",claim=self.name,queue="short")
+        frappe.enqueue("spendgate.notification.notify_finance_of_new_claim",claim=self.name,queue="short")
 
     def on_cancel(self):
         if self.status == "Reimbursed":
@@ -60,53 +60,3 @@ class ExpenseClaim(Document):
             else:
                 total += row.amount
         self.total_amount = total
-
-def notify_finance_of_new_claim(claim):
-    settings = frappe.get_single("Spendgate Settings")
-    finance_email = settings.finance_email
-    if not finance_email:
-        return
-    claim_doc = frappe.get_doc("Expense Claim", claim)
-    frappe.sendmail(
-        recipients=[finance_email],
-        subject=f"New Expense Claim {claim_doc.name}",
-        message=(
-            f"Claim {claim_doc.name} for {claim_doc.total_amount} "
-            f"({claim_doc.department}) was submitted by {claim_doc.employee}."
-        )
-    )
-    
-def get_permission_query_conditions(user):
-    if not user:
-        user = frappe.session.user
-    roles = frappe.get_roles(user)
-    if "SG Finance Manager" in roles or "System Manager" in roles:
-        return ""
-    conditions = []
-    if "SG Staff" in roles:
-        conditions.append(
-            "`tabExpense Claim`.employee = {0}".format(
-                frappe.db.escape(user)
-            )
-        )
-    if "SG Department Head" in roles:
-        departments = frappe.get_all(
-            "Department",
-            filters={"department_head": user},
-            pluck="name",
-        )
-        if departments:
-            dept_list = ", ".join(
-                frappe.db.escape(d)
-                for d in departments
-            )
-            conditions.append(
-                "`tabExpense Claim`.department IN ({0})".format(
-                    dept_list
-                )
-            )
-        else:
-            conditions.append("1=0")
-    if not conditions:
-        return ""
-    return "(" + " OR ".join(conditions) + ")"

@@ -19,11 +19,11 @@ doc_events = {
 
 fixtures = [
     "Department",
-    {"doctype": "Role", "filters": {"role_name": ["like", "SG %"]}},
+    {"doctype": "Role", "filters": {"role_name": ["SG Finance Manager","SG Department Head","SG Staff"]}},
 ]
 
 permission_query_conditions = {
-    "Expense Claim": "spendgate.spendgate.doctype.expense_claim.expense_claim.get_permission_query_conditions",
+    "Expense Claim": "spendgate.permission.get_permission_query_conditions",
 }
 # required_apps = []
 

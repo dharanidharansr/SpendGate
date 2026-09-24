@@ -14,45 +14,32 @@ def get_claims_pending_approval():
     return result
 
 @frappe.whitelist()
-def reassign_department_claims(from_dept, to_dept):
-    if not frappe.db.exists("Department", from_dept):
-        frappe.throw(f"Department '{from_dept}' does not exist")
+def reassign_claim_department(claim, to_dept):
+    if not claim:
+        frappe.throw("Claim is required")
+    if not to_dept:
+        frappe.throw("New Department is required")
+    if not frappe.db.exists("Expense Claim", claim):
+        frappe.throw(f"Expense Claim '{claim}' does not exist")
     if not frappe.db.exists("Department", to_dept):
         frappe.throw(f"Department '{to_dept}' does not exist")
-    try:
-        frappe.db.sql(
-            """
-            UPDATE `tabExpense Claim`
-            SET department = %s
-            WHERE department = %s AND docstatus = 0
-            """,
-            (to_dept, from_dept),
-        )
-        frappe.db.commit()
-    except Exception:
-        frappe.db.rollback()
-        frappe.log_error(
-            title="reassign_department_claims failed",
-            message=frappe.get_traceback(),
-        )
-        raise
-
-@frappe.whitelist()
-def share_expense_claim(claim_name, user_email):
-    if not frappe.db.exists("Expense Claim", claim_name):
-        frappe.throw("Expense Claim does not exist")
-    if not frappe.db.exists("User", user_email):
-        frappe.throw("User does not exist")
-    frappe.has_permission("Expense Claim", ptype="share", doc=claim_name, throw=True)
-    share_doc = frappe.share.add("Expense Claim",
-        claim_name,
-        user=user_email,
-        read=1,
-        write=0,
-        submit=0,
-        notify=1)
-    return {"share_name": share_doc.name, "user": share_doc.user}
-
+    expense_claim = frappe.get_doc("Expense Claim", claim)
+    if expense_claim.status != "Draft":
+        frappe.throw("Only Draft claims can be reassigned")
+    if expense_claim.department == to_dept:
+        frappe.throw("Claim is already assigned to this department")
+    frappe.db.set_value(
+        "Expense Claim",
+        claim,
+        "department",
+        to_dept
+    )
+    frappe.db.commit()
+    return {
+        "success": True,
+        "claim": claim,
+        "department": to_dept
+    }
 
 @frappe.whitelist()
 def get_expense_claim_data_unsafe(claim_name):
@@ -112,3 +99,42 @@ def get_expense_claim_data_safe(claim_name):
     claim["expense_lines"] = line_items
     claim["amounts_visible"] = inside_department
     return claim
+
+@frappe.whitelist()
+def get_budget_status(budget):
+    if not frappe.db.exists("Budget", budget):
+        frappe.throw("Budget does not exist")
+    total = frappe.db.get_value("Budget", budget, "total_allocated") or 0
+    spent = frappe.db.sql("""
+        SELECT COALESCE(SUM(total_amount), 0) FROM `tabExpense Claim`
+        WHERE budget = %s AND docstatus = 1
+    """, (budget,))[0][0]
+    return {"total_allocated": total, "spent": spent, "remaining": total - spent}
+
+
+@frappe.whitelist()
+def approve_claim(claim):
+    doc = frappe.get_doc("Expense Claim", claim)
+    doc.check_permission("write")
+    if doc.status != "Pending Approval":
+        frappe.throw("Only Pending Approval claims can be approved")
+    frappe.db.set_value("Expense Claim", claim, {
+        "status": "Approved",
+        "approved_by": frappe.session.user,
+    })
+    frappe.db.commit()
+    return {"name": claim, "status": "Approved"}
+
+
+@frappe.whitelist()
+def reject_claim(claim, reason):
+    if not (reason or "").strip():
+        frappe.throw("Rejection reason is required")
+    doc = frappe.get_doc("Expense Claim", claim)
+    doc.check_permission("write")
+    frappe.db.set_value("Expense Claim", claim, {
+        "status": "Rejected",
+        "rejection_reason": reason,
+    })
+    frappe.db.commit()
+    return {"name": claim, "status": "Rejected"}
