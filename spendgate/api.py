@@ -122,6 +122,7 @@ def approve_claim(claim):
         "status": "Approved",
         "approved_by": frappe.session.user,
     })
+    frappe.enqueue("spendgate.notification.notify_finance_of_new_claim",claim=claim,queue="short")
     frappe.db.commit()
     return {"name": claim, "status": "Approved"}
 

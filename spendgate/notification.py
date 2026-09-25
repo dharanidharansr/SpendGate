@@ -8,10 +8,10 @@ def notify_finance_of_new_claim(claim):
         return
     claim_doc = frappe.get_doc("Expense Claim", claim)
     frappe.sendmail(
-        recipients=[finance_email],
-        subject=f"New Expense Claim {claim_doc.name}",
-        message=(
-            f"Claim {claim_doc.name} for {claim_doc.total_amount} "
-            f"({claim_doc.department}) was submitted by {claim_doc.employee}."
-        )
+        recipients=finance_email,
+        subject="YEAHHHHHHHHHHHHHHHHHHHHH",
+        message=f"""
+        <p>new expense record {claim_doc} is submitted by {frappe.session.user}<p>
+        """,
+        delayed=False
     )

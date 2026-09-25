@@ -31,13 +31,14 @@ class ExpenseClaim(Document):
         """, (self.budget, self.name or ""))[0][0]
         remaining = budget_total - spent_so_far - self.total_amount
         updates = {"remaining_budget_at_submission": remaining}
+        ch = {"status": "Pending Approval"}
         if not self.approved_by:
             updates["approved_by"] = frappe.session.user
         self.db_set(updates, update_modified=False)
+        self.db_set(ch, update_modified=False)
         self.remaining_budget_at_submission = remaining
         if "approved_by" in updates:
             self.approved_by = frappe.session.user
-        frappe.enqueue("spendgate.notification.notify_finance_of_new_claim",claim=self.name,queue="short")
 
     def on_cancel(self):
         if self.status == "Reimbursed":
